@@ -14,3 +14,5 @@ Functions for the code must also be run. These functions are located in the  mie
 You will also need to specifiy where data is to be stored. This should be specified in the parameter_graphing code.
 
 data_analysis.Rmd documents and explains the code used for data analysis done with the model results. This is also available as a PDF. 
+
+fract_trial_3_6spec.txt contains the simulation data used in the data analysis.
