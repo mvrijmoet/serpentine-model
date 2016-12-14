@@ -1,0 +1,426 @@
+---
+title: "Analysis"
+output: pdf_document
+---
+
+First, lets see what the effect are when there are 6 species of plants. 
+
+```{r}
+frac_trial_3 <- read.csv("C:/Users/Mieke/Documents/Senior Work/outputs/fract_trial_3_6spec.txt")
+attach(frac_trial_3)
+```
+
+Sensativity Analysis
+```{r}
+fit <- lm(dominent ~ comp_1 + comp_2 + comp_3 + comp_4 + comp_5 + comp_6
+          + tol_1 + tol_2 + tol_3 + tol_4 + tol_5 + tol_6 
+          + raw_b_1 + raw_b_2 + raw_b_3 + raw_b_4 + raw_b_5 + raw_b_6
+          + raw_slope_1 + raw_slope_2 + raw_slope_3 + raw_slope_4 + raw_slope_5 + raw_slope_6
+          + vegchance_1 + vegchance_2 + vegchance_3 + vegchance_3 + vegchance_4 + vegchance_5 + vegchance_6)
+
+summary(fit)
+
+fit <- lm(dominent ~ norm1 + norm2 + norm3 + norm4 + norm5 + norm6
+          + normtol1 + normtol2 + normtol3 + normtol4 + normtol5 + normtol6 
+          + raw_b_1 + raw_b_2 + raw_b_3 + raw_b_4 + raw_b_5 + raw_b_6
+          + raw_slope_1 + raw_slope_2 + raw_slope_3 + raw_slope_4 + raw_slope_5 + raw_slope_6
+          + vegchance_1 + vegchance_2 + vegchance_3 + vegchance_3 + vegchance_4 + vegchance_5 + vegchance_6)
+
+summary(fit)
+```
+
+
+Relationships to explore: 
+- What is the relationship between  amount of toxicity and diversity? 
+- what  is the relationship between amount of toxicity and diversity on Serpentine Patches? Off of serpentine patches?
+
+Initially, I thought that diversity would be measured and compared using the Shannon index. This index gives weight to species based on the proportion of all individuals they represent and the evenness, or simularity between abundances of represented species. However, this index is limited because it assumes all species are represented. In the case of this  model where the diversity index must be calculated 
+
+```{r}
+total_pop <- pop_1 + pop_2 + pop_3 + pop_4 + pop_5 + pop_6
+prop = matrix(0, nrow = length(pop_1), ncol = 6)
+prop[,1] <- pop_1 / total_pop
+prop[,2] <- pop_2 / total_pop
+prop[,3] <- pop_3 / total_pop
+prop[,4] <- pop_4 / total_pop
+prop[,5] <- pop_5 / total_pop
+prop[,6] <- pop_6 / total_pop
+shan_presum = matrix(0, nrow = length(pop_1), ncol = 6)
+
+for (j in 1:length(pop_1)){
+for (i in 1:6){
+  if (prop[j,i] == 0){
+    shan_presum[j,i] = 0
+  }else{
+    shan_presum[j,i] = prop[j,i] * log(prop[j,i])
+  }
+}
+  
+}
+shannon_true <-( - apply(shan_presum, MARGIN = 1, sum))
+
+```
+
+
+```{r, echo=FALSE}
+frac_tot <- (frac_dim1 * frac_dim2 * frac_dim3)
+plot(shannon_true ~ frac_tot)
+```
+
+```{r}
+fit <- lm(shannon_true ~ frac_tot)
+summary(fit)
+```
+
+It appears that there is no relationship between the diversity as measured by the shannon index and the total fraction of the landscape which is held as a toxic soil type. 
+
+```{r}
+fit <- lm(sprich_toxic ~ frac_tot)
+summary(fit)
+
+fit <- lm(spdens_toxic ~ frac_tot)
+summary(fit)
+
+fit <- lm(sprich_norm ~ frac_tot)
+summary(fit)
+
+fit <- aov(frac_tot ~ as.factor(sprich_toxic))
+summary(fit)
+TukeyHSD(x = fit)
+```
+
+is there a signigicant difference in the diversity of highly tolerent and highly intolerent plants? Does this relationship change with different values of total toxicity coverage? My hypothesis would be that there would be significantly more 
+
+```{r}
+
+```
+
+
+Is there perhaps a relationship between the diversity and the arrangement of this toxicity? I decided to compare diversity between three groups: fractal landscapes with .25, .5, .75, or 1.0 as the first fractal dimension, looking only at sites with less than 20% total toxicity. Thus, various fractal dimension one values will represent varying degrees of patch isolation.
+
+```{r, echo = FALSE}
+plot(frac_tot[which(frac_tot < 0.2)] ~ frac_dim1[which(frac_tot < .2)])
+
+```
+
+
+```{r}
+fit <- lm(shannon_true[which(frac_tot < .2)] ~ frac_dim1[which(frac_tot < .2)])
+summary(fit)
+plot(shannon_true[which(frac_tot < .2)] ~ frac_dim1[which(frac_tot < .2)])
+
+fit <- lm(shannon_true ~ frac_dim1)
+summary(fit)
+```
+
+It seems that the first fractal dimension has a significant effect on diversity both among sites with low total amounts of toxicity and among all sites, regardless of total toxicity.  
+
+```{r}
+fit <- aov(shannon_true[which(frac_tot < .2)] ~ as.factor(frac_dim1[which(frac_tot < .2)]) + as.factor(frac_dim2[which(frac_tot < .2)]) + as.factor(frac_dim3[which(frac_tot < .2)]))
+summary(fit)
+
+TukeyHSD(x = fit, conf.level = .95)
+
+fit <- aov(shannon_true[which(frac_tot < .2)] ~ as.factor(frac_dim1[which(frac_tot < .2)]))
+summary(fit)
+
+TukeyHSD(x = fit, conf.level = .95)
+
+fit <- aov(shannon_true ~ as.factor(frac_dim1))
+summary(fit)
+
+TukeyHSD(x = fit, conf.level = .95)
+
+```
+
+It appears that the only significant difference appears between the values of biodiversity when fractal dimension 1 is 1.0 vs when it is .25. So in other words, the significant different appeared between when toxicity was concentrated to  one quadrant versus when it was spread across multiple quadrants. 
+
+Is there a significant difference in the total toxicity between these two values of dim 1 (within the range of total toxicity measured here)?
+
+```{r}
+fit <- aov(frac_tot[which(frac_tot < .2)] ~ as.factor(frac_dim1[which(frac_tot < .2)]))
+summary(fit)
+
+TukeyHSD(x = fit, conf.level = .95)
+
+fit <- lm(shannon_true[which(frac_tot < .2)] ~ frac_tot[which(frac_tot < .2)] + frac_dim1[which(frac_tot < .2)])
+summary(fit)
+
+fit <- lm(shannon_true[which(frac_tot < .2)] ~ frac_tot[which(frac_tot < .2)])
+summary(fit)
+
+plot(frac_tot, shannon_true)
+```
+
+It appears that there is a significant difference between thetotal percent cover in the high and low dim 1 group. However, its not more than a .05 percent cover difference. I think that there is still a possibility that the effect of dim1 observed previously can be explained by a difference in the total percent cover between these two groups. However, a follow up regression shows the relationship between the total fraction  cover and the shannon index in this range is insignificant. Thus, I think its possible to say that the value of dim1 had a significant effect on the shannon index at its highest and lowest categories.
+
+An important follow up experiment would be to rerun the model constraining the fractal dimensions to the significant groups and observing if there is a signigicant influence of factor value or if total amount is still important. My suspicion is that there is a different range of total percent covers in the two groups (dim1 = 1.0 and dim1 = .25) which makes comparisons between the two compounded and not only reflective of the dimension number. It appears that the dimension value is the more significant effect but it is not certain that these two are not correlated. 
+
+Figure for this set of tests:
+
+```{r}
+
+```
+
+
+What functional features of plants determine fitness?
+
+It appears that dominence is correlated with a  higher chance of dominence. 
+
+```{r}
+cor.test(fract_trial_3$best_1 * 1, fract_trial_3$winner_1 * 1)
+cor.test(fract_trial_3$best_2 * 1, fract_trial_3$winner_2 * 1)
+cor.test(fract_trial_3$best_3 * 1, fract_trial_3$winner_3 * 1)
+cor.test(fract_trial_3$best_4 * 1, fract_trial_3$winner_4 * 1)
+cor.test(fract_trial_3$best_5 * 1, fract_trial_3$winner_5 * 1)
+cor.test(fract_trial_3$best_6 * 1, fract_trial_3$winner_6 * 1)
+
+```
+
+
+In order to assess the role of tolerence and competition values, both types were normalized by dividing each value by the sum total of all competion values within each simulation run. Then, I ran a logistic regression to determine if for each species the  normalized value was a strong predictor of dominence. Dominence here is represented by being the most populous on the landscape. 
+```{r}
+fit <- glm(winner_1 ~ norm1 + normtol1, family = binomial())
+summary(fit)
+
+fit <- glm(winner_2 ~ norm2 + normtol2, family = binomial())
+summary(fit)
+
+fit <- glm(winner_3 ~ norm3 + normtol3, family = binomial())
+summary(fit)
+
+fit <- glm(winner_4 ~ norm4 + normtol4, family = binomial())
+summary(fit)
+
+fit <- glm(winner_5 ~ norm5 + normtol5, family = binomial())
+summary(fit)
+
+fit <- glm(winner_6 ~ norm6 + normtol6, family = binomial())
+summary(fit)
+
+```
+
+It appears that for every species, the normalized competion value and tolerence value was a strong predictor of that plant dominating. 
+
+Include: a table to show these results. 
+```{r}
+plot(norm1, winner_1*1, col = "red")
+points(norm2, winner_2*1, col = "blue")
+points(norm3, winner_3 * 1, col = "green")
+points(norm4, winner_4 * 1, col = "purple")
+
+curve(predict.glm(fit, as.data.frame(norm6 = x), type="response"))
+```
+
+
+
+
+-normalize competition and tolerence values
+-is competition value a determinent of dominance?
+-is the value of b or other parts of the reproductive function a predictor?
+-do more  simular comptition  values or tolernece values lead to more diversity?
+-how do these relationships vary with toxicity amounts?
+
+Figure 1:
+```{r}
+fit <- glm(winner_1 ~ norm1, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm1 = xweight), type = "response")
+plot(norm1,winner_1, main = "Logistic Regression Curve of Species Competative Ability", xlab = "Normalized Competitive Parameter", ylab = "Chance of Winning")
+lines(xweight, yweight)
+
+fit <- glm(winner_2 ~ norm2, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm2 = xweight), type = "response")
+lines(xweight, yweight, col = "red")
+
+fit <- glm(winner_3 ~ norm3, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm3 = xweight), type = "response")
+lines(xweight, yweight, col = "blue")
+
+fit <- glm(winner_4 ~ norm4, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm4 = xweight), type = "response")
+lines(xweight, yweight, col = "green")
+
+fit <- glm(winner_5 ~ norm5, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm5 = xweight), type = "response")
+lines(xweight, yweight, col = "olive green")
+
+fit <- glm(winner_6 ~ norm6, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(norm6 = xweight), type = "response")
+lines(xweight, yweight, col = "dark red")
+
+
+fit <- glm(winner_2[which(frac_tot > .5)] ~ highfrac_norm2, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(highfrac_norm2 = xweight), type = "response")
+lines(xweight, yweight, col = "dark red")
+
+lowfrac_norm2 <- norm2[which(frac_tot < .5)]
+
+fit <- glm(winner_2[which(frac_tot < .5)] ~ lowfrac_norm2, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(lowfrac_norm2 = xweight), type = "response")
+lines(xweight, yweight, col = "pink")
+
+```
+
+For tolerence:
+
+```{r}
+fit <- glm(winner_1 ~ normtol1, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol1 = xweight), type = "response")
+plot(norm1,winner_1, main = "Logistic Regression Curve of Species Tolerance", xlab = "Normalized Tolerance Parameter", ylab = "Chance of Winning")
+lines(xweight, yweight)
+
+fit <- glm(winner_2 ~ normtol2, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol2 = xweight), type = "response")
+lines(xweight, yweight, col = "red")
+
+fit <- glm(winner_3 ~ normtol3, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol3 = xweight), type = "response")
+lines(xweight, yweight, col = "blue")
+
+fit <- glm(winner_4 ~ normtol4, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol4 = xweight), type = "response")
+lines(xweight, yweight, col = "green")
+
+fit <- glm(winner_5 ~ normtol5, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol5 = xweight), type = "response")
+lines(xweight, yweight, col = "olive green")
+
+fit <- glm(winner_6 ~ normtol6, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(normtol6 = xweight), type = "response")
+lines(xweight, yweight, col = "dark red")
+```
+
+Figure 2:
+```{r}
+low <- which(frac_tot < .25)
+high <- which(frac_tot > .5)
+
+tmp_low <- normtol1[low]
+
+fit <- glm(winner_1[low] ~ tmp_low, family = binomial())
+summary(fit)
+
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+plot(tmp_low,winner_1[low], main = "Logistic Regression Curve of Species Tolerance", xlab = "Normalized Tolerance Parameter", ylab = "Chance of Winning")
+lines(xweight, yweight, col = "aquamarine")
+
+tmp_low <- normtol2[low]
+fit <- glm(winner_2[low] ~ tmp_low, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+lines(xweight, yweight, col = "aquamarine1")
+
+tmp_low <- normtol3[low]
+fit <- glm(winner_3[low] ~ tmp_low, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+lines(xweight, yweight, col = "aquamarine2")
+
+tmp_low <- normtol4[low]
+fit <- glm(winner_4 ~ tmp_low, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+lines(xweight, yweight, col = "aquamarine3")
+
+tmp_low <- normtol5[low]
+fit <- glm(winner_5[low] ~ tmp_low, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+lines(xweight, yweight, col = "aquamarine4")
+
+tmp_low <- normtol6[low]
+fit <- glm(winner_6[low] ~ tmp_low, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_low = xweight), type = "response")
+lines(xweight, yweight, col = "aquamarine4")
+
+tmp_high <- normtol1[high]
+
+fit <- glm(winner_1[high] ~ tmp_high, family = binomial())
+summary(fit)
+
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+lines(xweight, yweight, col = "coral")
+
+tmp_high <- normtol2[high]
+fit <- glm(winner_2[high] ~ tmp_high, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+lines(xweight, yweight, col = "coral1")
+
+tmp_high <- normtol3[high]
+fit <- glm(winner_3[high] ~ tmp_high, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+#lines(xweight, yweight, col = "coral2")
+
+tmp_high <- normtol4[high]
+fit <- glm(winner_4[high] ~ tmp_high, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+#lines(xweight, yweight, col = "coral3")
+
+tmp_high <- normtol5[high]
+fit <- glm(winner_5[high] ~ tmp_high, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+lines(xweight, yweight, col = "coral4")
+
+tmp_high <- normtol6[high]
+fit <- glm(winner_6[high] ~ tmp_high, family = binomial())
+summary(fit)
+xweight <- seq(0, .5, 0.01)
+yweight<- predict(fit, list(tmp_high = xweight), type = "response")
+lines(xweight, yweight, col = "coral4")
+
+```
+
+Does this relationship hold when there are 
+- What features of plants lead to domination?
+
+Graphs!!!
+
+Figure 1
+```{r}
+
+```
+
